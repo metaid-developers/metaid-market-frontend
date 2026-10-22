@@ -1,6 +1,5 @@
 import Order from "@/components/Order";
 import { sellOrder } from "@/services/api";
-import { buildAskLimit } from "@/utils/orders";
 import { Button, Card, ConfigProvider, InputNumber, List, Space, Grid } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useModel } from "umi";
@@ -23,7 +22,7 @@ import NumberFormat from "@/components/NumberFormat";
 import ListForPin from "./components/ListForPin";
 import Trans from "@/components/Trans";
 const { useBreakpoint } = Grid;
-const items = ["PIN", 'MRC-20', 'ID-Coins'];
+const items: Array<"PIN" | "MRC-20" | "ID-Coins"> = ["PIN", "MRC-20", "ID-Coins"];
 export default () => {
   const [tab, setTab] = useState<"PIN" | "MRC-20" | 'ID-Coins'>("PIN");
   const screens = useBreakpoint();

@@ -1,50 +1,44 @@
-import usePageList from "@/hooks/usePageList"
-import { getIdCoinList, getMrc20List } from "@/services/api"
-import { ConfigProvider, Table, TableColumnsType, Grid, Progress, Button, Tooltip, Popconfirm, Modal, Checkbox, CheckboxProps, message, List, TableProps } from "antd"
+import { getMrc20List } from "@/services/api"
+import { ConfigProvider, Table, TableColumnsType, Grid, Progress, Button, Tooltip, message, List, TableProps } from "antd"
 import { useModel, history } from "umi"
 import NumberFormat from "../NumberFormat";
-import Item from "./Item";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import MetaIdAvatar from "../MetaIdAvatar";
 import { ArrowRightOutlined } from "@ant-design/icons";
-import { getCreatePinFeeByNet, getMetaIdUrlByNet, getOrdersTradeUrlByNet } from "@/config";
+import { getMetaIdUrlByNet } from "@/config";
 import IdCoinCard from "./IdCoinCard";
 import Sorter from "../Sorter";
 import { openWindowTarget } from "@/utils/utlis";
 import { addUtxoSafe } from "@/utils/psbtBuild";
-import dayjs from "dayjs";
 import Trans from "../Trans";
 const { useBreakpoint } = Grid;
-type OnChange = NonNullable<TableProps<API.IdCoin>['onChange']>;
+type OnChange = NonNullable<TableProps<API.MRC20Info>['onChange']>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 export default () => {
     const screens = useBreakpoint();
-    const [modal, contextHolder] = Modal.useModal();
     const { network, btcAddress, connect, connected, btcConnector, feeRate } = useModel("wallet")
     const { searchWord, IdCoinPage: page, setIdCoinPage: setPage } = useModel('mrc20')
-    const [list, setList] = useState<API.IdCoin[]>([]);
+    const [list, setList] = useState<API.MRC20Info[]>([]);
+    const [followedMetaIds, setFollowedMetaIds] = useState<string[]>([]);
     const [total, setTotal] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    // const [page, setPage] = useState<number>(0);
     const [size, setSize] = useState<number>(10);
-    const [params, setParams] = useState<Record<string, any>>({ orderBy: 'timestamp', sortType: -1 });
-    const [orderBy, setOrderBy] = useState<string>('timestamp');
+    const [orderBy, setOrderBy] = useState<string>('deployTime');
     const [sortType, setSortType] = useState<1 | -1>(1);
 
     useEffect(() => {
         let didCancel = false;
         const fetchData = async () => {
             setLoading(true);
-            const { code, message: msg, data } = await getIdCoinList(network, {
+            const { code, message: msg, data } = await getMrc20List(network, {
                 cursor: page * size,
                 size,
-                completed: false,
-                followerAddress: btcAddress || '',
                 searchTick: searchWord,
                 orderBy,
                 sortType,
+                tag: 'id-coins',
             });
             if (didCancel) return
             if (code !== 0) {
@@ -63,53 +57,9 @@ export default () => {
         return () => {
             didCancel = true;
         };
-    }, [network, page, size, orderBy, sortType, btcAddress, searchWord])
-    // const fetchData = useCallback(async () => {
-    //     setLoading(true);
-    //     const { code, message, data } = await getIdCoinList(network, {
-    //         cursor: page * size,
-    //         size,
-    //         followerAddress: btcAddress || '',
-    //         ...params,
-    //     });
-    //     if (code !== 0) return
-    //     if (data.list) {
-    //         setList(data.list);
-    //         setTotal(data.total);
-    //     }
-    //     setLoading(false);
-    // }, [network, page, size, params, btcAddress]);
+    }, [network, page, size, orderBy, sortType, searchWord])
 
-    const showMintNotice = (record: API.IdCoin) => {
-        // modal.warning({
-        //     title: 'Mint Notification',
-        //     content: 'You have not yet been granted the right to mint tokens! Follow the deployed user to gain the ability to mint'
-        // })
-        history.push({ pathname: '/inscribe/MRC-20/' + record.tick }, { from: 'idCoins' })
-    }
-    const onChange: CheckboxProps['onChange'] = (e) => {
-        console.log(`checked = ${e.target.checked}`);
-        localStorage.setItem('tradeNotice', e.target.checked ? '1' : '0')
-    };
-    const showTradeNotice = (record: API.IdCoin) => {
-        modal.warning({
-            title: <Trans>Trade  Notification</Trans>,
-            content: <div>
-                <p style={{ marginBottom: 40 }}>
-                    <Trans>When you choose to redirect to our partnered third-party trading platform through this link, please proactively assess the trading risks and be prepared to assume these risks yourself. We cannot guarantee the absolute safety of the transaction.</Trans>
-
-                </p>
-
-                <Checkbox onChange={onChange}><Trans>I am aware of the above risks</Trans></Checkbox>
-            </div>,
-            onOk() {
-                // message.info('coming soon...')
-                window.open(getOrdersTradeUrlByNet(network, record.tick, btcAddress), openWindowTarget())
-            }
-
-        })
-    }
-    const handleFollow = async (record: API.IdCoin) => {
+    const handleFollow = async (record: API.MRC20Info) => {
         if (!connected) {
             await connect();
             return
@@ -129,18 +79,12 @@ export default () => {
                 options: {
                     noBroadcast: 'no',
                     feeRate: feeRate,
-                    // service: getCreatePinFeeByNet(network),
                 },
             });
             if (followRes.status) throw new Error(followRes.status)
             if (followRes && followRes.revealTxIds && followRes.revealTxIds[0]) {
                 message.success(<Trans>Follow successfully! Please wait for the transaction to be confirmed!</Trans>)
-                setList(list.map(item => {
-                    if (item.deployerMetaId === record.deployerMetaId) {
-                        item.isFollowing = true
-                    }
-                    return item
-                }))
+                setFollowedMetaIds([...followedMetaIds, record.deployerMetaId])
                 await addUtxoSafe(btcAddress, [{ txId: followRes.commitTxId, vout: 1 }])
             } else {
                 throw new Error('Follow failed')
@@ -150,28 +94,26 @@ export default () => {
         }
     }
 
-    // useEffect(() => {
-    //     fetchData();
-    // }, [fetchData]);
-    const columns: TableColumnsType<API.IdCoin> = [
+    const columns: TableColumnsType<API.MRC20Info> = [
         {
             title: <Trans>Name</Trans>,
             key: 'name',
             dataIndex: 'deployerUserInfo',
             render: (_, record) => {
+                const isFollowing = followedMetaIds.includes(record.deployerMetaId)
                 return <div className="idCoinDeploy">
-                    <MetaIdAvatar size={screens.xl ? 72 : 50} avatar={record.deployerUserInfo.avatar} />
+                    <MetaIdAvatar size={screens.xl ? 72 : 50} avatar={record.deployerUserInfo?.avatar} />
                     <div>
                         <div className="nameWrap">
                             <div className="name">
-                                <Tooltip title={record.deployerUserInfo.name || record.deployerAddress}>{record.deployerUserInfo.name || record.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</Tooltip>
+                                <Tooltip title={record.deployerUserInfo?.name || record.deployerAddress}>{record.deployerUserInfo?.name || record.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</Tooltip>
                             </div>
                             <a onClick={(e) => e.stopPropagation()} href={`${getMetaIdUrlByNet(network)}${record.deployerMetaId}`} target={openWindowTarget()}>
                                 <ArrowRightOutlined style={{ color: '#fff', transform: 'rotate(-0.125turn)' }} />
                             </a>
                         </div>
                         <div className="metaid">MetaID :<Tooltip title={record.deployerMetaId}>{record.deployerMetaId.replace(/(\w{6})\w+(\w{5})/, "$1...")}</Tooltip> </div>
-                        <Button style={{ height: 24, fontSize: 10 }} shape="round" disabled={record.isFollowing} size='small' onClick={(e) => { e.stopPropagation(); handleFollow(record) }} type='link'> <Trans>{record.isFollowing ? 'Following' : 'Follow'}</Trans></Button>
+                        <Button style={{ height: 24, fontSize: 10 }} shape="round" disabled={isFollowing} size='small' onClick={(e) => { e.stopPropagation(); handleFollow(record) }} type='link'> <Trans>{isFollowing ? 'Following' : 'Follow'}</Trans></Button>
 
                     </div>
                 </div>
@@ -180,7 +122,7 @@ export default () => {
             width: 200
         },
         {
-            title:<Trans>Ticker</Trans>,
+            title: <Trans>Ticker</Trans>,
             dataIndex: 'tick',
             key: 'tick',
             width: 110,
@@ -192,19 +134,9 @@ export default () => {
             }
         },
         {
-            title: <Trans>Followers Limit</Trans>,
-            dataIndex: 'followersLimit',
-            key: 'followersLimit',
-            align: 'center',
-            width: 160,
-            render: (item) => {
-                return <NumberFormat value={item} />
-            }
-        },
-        {
             title: <Trans>Supply</Trans>,
-            dataIndex: 'totalSupply',
-            key: 'totalSupply',
+            dataIndex: 'supply',
+            key: 'supply',
             sorter: true,
             align: 'center',
             width: 160,
@@ -213,27 +145,12 @@ export default () => {
             }
         },
         {
-            title: <Trans>Liquidity Per Mint</Trans>,
-            dataIndex: 'liquidityPerMint',
-            key: 'liquidityPerMint',
-            // sorter: true,
-            width: 140,
-            align: 'center',
-            render: (price) => {
-                return <NumberFormat value={price} />
-            }
-        },
-
-        {
-            title: <Trans>Pool</Trans>,
-            dataIndex: 'pool',
-            key: 'pool',
+            title: <Trans>Holders</Trans>,
+            dataIndex: 'holders',
+            key: 'holders',
             sorter: true,
-            width: 140,
             align: 'center',
-            render: (price) => {
-                return <NumberFormat value={price} decimal={8} isBig suffix=' BTC' />
-            }
+            width: 100,
         },
         {
             title: <Trans>Message</Trans>,
@@ -260,8 +177,8 @@ export default () => {
             width: 200,
             align: 'center',
             sorter: true,
-            render: (price, record) => {
-                const percent = (Number(record.supply / record.totalSupply) * 100) || 0;
+            render: (_, record) => {
+                const percent = ((Number(record.supply) / Number(record.totalSupply)) * 100) || 0;
                 return <div className="progressAndMint">
 
                     <div className="progress ">
@@ -270,48 +187,11 @@ export default () => {
 
                         </Progress>
                     </div>
-                    {
-                        record.mintable && <Button size='small' disabled={!record.mintable} onClick={(e) => {
-                            e.stopPropagation();
-                            showMintNotice(record)
-
-                        }} type='primary'><Trans>Mint</Trans></Button>
-                    }
 
 
                 </div>
             }
         },
-        {
-            title: <Trans>Trade</Trans>,
-            dataIndex: 'Trade',
-            // fixed: 'right',
-            key: 'Trade',
-            align: 'center',
-            width: 80,
-            render: (_, record) => {
-                return <Button size='small' onClick={(e) => {
-                    e.stopPropagation();
-                    if (localStorage.getItem('tradeNotice') === '1') {
-                        window.open(getOrdersTradeUrlByNet(network, record.tick, btcAddress), openWindowTarget())
-
-                    } else {
-                        showTradeNotice(record)
-                    }
-
-                }} type='primary'><Trans>Trade</Trans></Button>
-            }
-        },
-        // {
-        //     title: 'Time',
-        //     dataIndex: 'deployTime',
-        //     sorter: true,
-        //     align: 'center',
-        //     width: 200,
-        //     render: (price) => {
-        //         return dayjs(price * 1000).format('MM/DD/YYYY,HH:mm')
-        //     }
-        // },
 
     ]
 
@@ -333,7 +213,7 @@ export default () => {
         }}>
         {screens.md ? <Table
             style={{ margin: screens.xl ? '0 20px ' : '0 0px' }}
-            columns={columns.filter(item => !['followersLimit', 'metaData'].includes(item.dataIndex) || screens.xl)}
+            columns={columns.filter(item => (item as any).dataIndex !== 'metaData' || screens.xl)}
             rowKey={(record) => record.mrc20Id}
             dataSource={list}
             size={screens.xl ? 'middle' : 'small'}
@@ -350,14 +230,12 @@ export default () => {
             scroll={{ x: 800 }}
             loading={loading}
             onChange={(_1, _2, sorter) => {
-                // setOrderBy(sorter.field || 'timestamp');
-                // setSortType(sorter.order === 'ascend' ? 1 : -1);
                 const { field, order } = sorter as Sorts;
                 if (order) {
                     setOrderBy((field || '').toString());
                     setSortType(order === 'ascend' ? 1 : -1);
                 } else {
-                    setOrderBy('timestamp');
+                    setOrderBy('deployTime');
                     setSortType(1);
                 }
             }}
@@ -372,8 +250,8 @@ export default () => {
         /> : <div>
             <Sorter sorters={[
                 { label: 'Ticker', key: 'tick' },
-                { label: 'Supply', key: 'totalSupply' },
-                { label: 'Pool', key: 'pool' },
+                { label: 'Supply', key: 'supply' },
+                { label: 'Holders', key: 'holders' },
                 { label: 'Progress', key: 'progress' },
             ]} sortKey={orderBy} sortType={sortType} setSortKey={setOrderBy} setSortType={setSortType} />
             <List
@@ -382,7 +260,7 @@ export default () => {
                 dataSource={list}
                 renderItem={(item) => (
                     <List.Item>
-                        <IdCoinCard record={item} showMintNotice={showMintNotice} showTradeNotice={showTradeNotice} handleFollow={handleFollow} />
+                        <IdCoinCard record={item} handleFollow={handleFollow} />
                     </List.Item>
                 )}
                 rowKey={"mrc20Id"}
@@ -400,6 +278,5 @@ export default () => {
             /></div>}
 
 
-        {contextHolder}
     </ConfigProvider>
 }

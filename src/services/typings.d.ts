@@ -200,6 +200,27 @@ declare namespace API {
     totalMinted: number;
     type: string;
     mintable: boolean;
+    deployerMetaId: string;
+    deployerAddress: string;
+    deployerUserInfo?: {
+      avatar: string;
+      name: string;
+    };
+    deployTime: number;
+    holders: number;
+    txCount: number;
+    price: string;
+    priceUsd: string;
+    floorPrice: string;
+    floorPriceUsd: string;
+    change24h: string;
+    marketCap: string;
+    marketCapUsd: string;
+    totalVolume: number;
+    totalSupply: string;
+    supply: string;
+    remaining: string;
+    tag: string;
   };
   type MRC20Shovel = {
     address: string;
@@ -287,6 +308,8 @@ declare namespace API {
     pinNumber: number;
     price: string;
     priceUsd: string;
+    floorPrice: string;
+    floorPriceUsd: string;
     pinCheck: {
       count: string;
       lvl: string;

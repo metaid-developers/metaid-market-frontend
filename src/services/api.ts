@@ -191,12 +191,14 @@ export async function getRawTx(
   options?: { [key: string]: any }
 ) {
   const { txid } = params;
-  const url = `https://www.orders.exchange/api-book/common/tx/raw`;
-  return request<API.Ret<{ rawTx: string }>>(url, {
-    method: "GET",
-    params: { net: network, txId: txid },
-    ...(options || {}),
-  });
+  return request<API.Ret<{ rawTx: string }>>(
+    `${getHost(network)}/api/v1/common/tx/raw`,
+    {
+      method: "GET",
+      params: { txId: txid },
+      ...(options || {}),
+    }
+  );
 }
 
 export async function mintMrc20Pre(
@@ -358,6 +360,7 @@ export async function getMrc20List(
     searchTick?: string;
     sortType?: number;
     orderBy?: string; //pinnumber/totalminted/holders/txcount
+    tag?: string; //"id-coins" lists only the fixed id-coin snapshot
   },
   options?: { [key: string]: any }
 ) {
@@ -523,22 +526,6 @@ export async function broadcastTx(
   return txid;
 }
 
-// export async function broadcastBTCTx(
-//   network: API.Network,
-//   rawTx: string
-// ): Promise<string> {
-//   return request<string>(
-//     `https://www.orders.exchange/api-book/common/tx/broadcast`,
-//     {
-//       method: "POST",
-//       data: {
-//         chain: "btc",
-//         net: network === "mainnet" ? "livenet" : "testnet",
-//         rawTx,
-//       },
-//     }
-//   );
-// }
 
 export async function broadcastBTCTx(
   network: API.Network,
@@ -601,27 +588,6 @@ export async function getMrc20InscribeOrders(
   );
 }
 
-export async function getIdCoinInscribeOrders(
-  network: API.Network,
-  params: {
-    opOrderType: string; //deploy, mint, transfer
-    address: string;
-    tickId?: string;
-    cursor: number;
-    size: number;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.ListRet<API.Mrc20InscribeOrder>>(
-    `${getHost(network)}/api/v1/id-coins/inscribe/orders`,
-    {
-      method: "GET",
-      params,
-      ...(options || {}),
-    }
-  );
-}
-
 export const getMetaletUtxos = async (
   network: API.Network,
   params: {
@@ -641,153 +607,6 @@ export const getMetaletUtxos = async (
   );
 };
 
-export async function deployIdCoinPre(
-  network: API.Network,
-  params: API.DeployIdCoinPreReq,
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<API.DeployIdCoinPreRes>>(
-    `${getHost(network)}/api/v1/id-coins/deploy/pre`,
-    {
-      method: "POST",
-      data: params,
-      ...(options || {}),
-    }
-  );
-}
-
-//deployIdCoinCommit
-
-export async function deployIdCoinCommit(
-  network: API.Network,
-  params: {
-    orderId: string;
-    commitTxRaw: string;
-    commitTxOutIndex: number; //commit交易中RevealAddress的output索引
-  },
-  options?: { [key: string]: any }
-) {
-  return request<
-    API.Ret<{
-      orderId: string;
-      commitTxId: string;
-      revealTxId: string;
-      tickId: string;
-      pinId: string;
-      txId: string;
-    }>
-  >(`${getHost(network)}/api/v1/id-coins/deploy/commit`, {
-    method: "POST",
-    data: params,
-    ...(options || {}),
-  });
-}
-
-export async function getIdCoinList(
-  network: API.Network,
-  params: {
-    cursor: number;
-    size: number;
-    address?: string;
-    followerAddress?: string;
-    searchTick?: string;
-    orderBy?: string;
-    sortType?: number;
-    completed?: boolean;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.ListRet<API.IdCoin>>(
-    `${getHost(network)}/api/v1/id-coins/coins-list`,
-    {
-      method: "GET",
-      params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function mintIdCoinPre(
-  network: API.Network,
-  params: {
-    networkFeeRate: number;
-    tickId: string;
-    outAddress: string;
-    outValue: number;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<API.MintIdCoinPreRes>>(
-    `${getHost(network)}/api/v1/id-coins/mint/pre`,
-    {
-      method: "POST",
-      data: params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function mintIdCoinCommit(
-  network: API.Network,
-  params: {
-    orderId: string;
-    commitTxRaw: string;
-    commitTxOutInscribeIndex: number; //commit交易中RevealAddress的Inscribe-output索引
-    commitTxOutMintIndex: number; //commit交易中RevealAddress的Mint-output索引
-  },
-  options?: { [key: string]: any }
-) {
-  return request<
-    API.Ret<{
-      orderId: string;
-      commitTxId: string;
-      revealInscribeTxId: string;
-      revealMintTxId: string;
-    }>
-  >(`${getHost(network)}/api/v1/id-coins/mint/commit`, {
-    method: "POST",
-    data: params,
-    ...(options || {}),
-  });
-}
-
-export async function getIdCoinInfo(
-  network: API.Network,
-  params: {
-    tickId?: string;
-    issuerAddress?: string;
-    tick?: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<API.IdCoin>>(
-    `${getHost(network)}/api/v1/id-coins/coins-info`,
-    {
-      method: "GET",
-      params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function getIdCoinMintOrder(
-  network: API.Network,
-  params: {
-    tickId?: string;
-    address?: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<{ addressMintState: number }>>(
-    `${getHost(network)}/api/v1/id-coins/address/mint/order`,
-    {
-      method: "GET",
-      params,
-      ...(options || {}),
-    }
-  );
-}
-
 export async function deployMRC20Pre(
   network: API.Network,
   params: API.DeployMRC20PreReq,
@@ -801,25 +620,6 @@ export async function deployMRC20Pre(
       ...(options || {}),
     }
   );
-}
-
-export async function checkUserCanDeployIdCoin(
-  network: API.Network,
-  params: {
-    address: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<
-    API.Ret<{
-      canDeploy: boolean;
-      msg: string;
-    }>
-  >(`${getHost(network)}/api/v1/id-coins/deploy/check/info`, {
-    method: "GET",
-    params,
-    ...(options || {}),
-  });
 }
 
 export async function getTickHolders(
@@ -839,113 +639,6 @@ export async function getTickHolders(
       ...(options || {}),
     }
   );
-}
-
-export async function refundIdCoinPre(
-  network: API.Network,
-  params: {
-    orderId: string;
-    address: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<API.RefundIdCoinPreRes>>(
-    `${getHost(network)}/api/v1/id-coins/invalid/refund/pre`,
-    {
-      method: "POST",
-      data: params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function refundIdCoinCommit(
-  network: API.Network,
-  params: {
-    orderId: string;
-    psbtRaw: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<
-    API.Ret<{
-      orderId: "string";
-      refundAddress: "string";
-      refundAmount: 0;
-      txId: "string";
-    }>
-  >(`${getHost(network)}/api/v1/id-coins/invalid/refund/commit`, {
-    method: "POST",
-    data: params,
-    ...(options || {}),
-  });
-}
-
-export async function redeemPreview(
-  network: API.Network,
-  params: {
-    assetUtxoIds: string[];
-    networkFeeRate: number;
-    sellerAddress: string;
-    tickId: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<{ assetCoinList: string[] }>>(
-    `${getHost(network)}/api/v1/id-coins/redeem/preview`,
-    {
-      method: "POST",
-      data: params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function redeemIdCoinPre(
-  network: API.Network,
-  params: {
-    assetUtxoIds: string[];
-    networkFeeRate: number;
-    sellerAddress: string;
-    tickId: string;
-    sellCoinAmount: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<API.Ret<API.RedeemIdCoinPreRes>>(
-    `${getHost(network)}/api/v1/id-coins/redeem/pre`,
-    {
-      method: "POST",
-      data: params,
-      ...(options || {}),
-    }
-  );
-}
-
-export async function redeemIdCoinCommit(
-  network: API.Network,
-  params: {
-    commitTxOutIndex: number;
-    commitTxRaw: string;
-    orderId: string;
-    revealPrePsbtRaw: string;
-  },
-  options?: { [key: string]: any }
-) {
-  return request<
-    API.Ret<{
-      tickId: string;
-      orderId: string;
-      revealTxId: string;
-      refundAmount: 0;
-      commitTxId: string;
-      txId: string;
-    }>
-  >(`${getHost(network)}/api/v1/id-coins/redeem/commit`, {
-    method: "POST",
-    data: params,
-    ...(options || {}),
-  });
 }
 
 export async function fetchFeeRecommend(

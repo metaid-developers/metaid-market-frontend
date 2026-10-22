@@ -23,29 +23,9 @@ export default () => {
             maxWidth: 'calc(100vw - 40px)',
         }} bordered title={<Trans>Service Fee</Trans>} column={1} items={[
             {
-                key: '1',
-                label: <Trans>Deploy ID-Coins</Trans>,
-                children: <div><NumberFormat value={1999} isBig decimal={8} suffix=' BTC' /></div>
-            },
-            {
                 key: '2',
                 label: <Trans>Deploy MRC-20</Trans>,
                 children: <div><NumberFormat value={1999} isBig decimal={8} suffix=' BTC' /></div>
-            },
-            {
-                key: '3',
-                label: <Trans>Mint ID-Coins</Trans>,
-                children: <div><NumberFormat value={0} isBig decimal={8} suffix=' BTC' /></div>
-            },
-            // {
-            //     key: '3',
-            //     label: 'Mint ID-Coins',
-            //     children: <div><NumberFormat value={1999} isBig decimal={8} suffix=' BTC' /></div>
-            // },
-            {
-                key: '4',
-                label: <Trans>Follow And Mint ID-Coins</Trans>,
-                children: <div><NumberFormat value={0} isBig decimal={8} suffix=' BTC' /></div>
             },
             {
                 key: '5',

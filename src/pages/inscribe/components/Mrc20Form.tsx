@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const { useBreakpoint } = Grid;
 import { useModel, useMatch, history, FormattedMessage } from "umi";
 import "./index.less";
-import { broadcastBTCTx, broadcastTx, checkPinUtxoInfo, deployCommit, deployMRC20Pre, getIdCoinInfo, getIdCoinMintOrder, getMrc20AddressShovel, getMrc20AddressUtxo, getMrc20Info, getUserMrc20List, mintIdCoinCommit, mintIdCoinPre, mintMrc20Commit, mintMrc20Pre, transferMrc20Commit, transfertMrc20Pre } from "@/services/api";
+import { broadcastBTCTx, broadcastTx, checkPinUtxoInfo, deployCommit, deployMRC20Pre, getMrc20AddressShovel, getMrc20AddressUtxo, getMrc20Info, getUserMrc20List, mintMrc20Commit, mintMrc20Pre, transferMrc20Commit, transfertMrc20Pre } from "@/services/api";
 import { SIGHASH_ALL, getPkScriprt } from "@/utils/orders";
 import { buildDeployMRC20Psbt, commitMintMRC20PSBT, transferMRC20PSBT } from "@/utils/mrc20";
 
@@ -18,10 +18,6 @@ import NumberFormat from "@/components/NumberFormat";
 import MRC20Icon from "@/components/MRC20Icon";
 import { addUtxoSafe, getUtxos } from "@/utils/psbtBuild";
 import SelectPins from "./SelectPins";
-import { buildMintIdCointPsbt } from "@/utils/idcoin";
-import IdCoinCard from "./IdCoinCard";
-import ComfirmMintIdCoin from "./ComfirmMintIdCoin";
-import idCoin from "@/pages/mrc20/idCoin";
 import Decimal from "decimal.js";
 import ComfirmTransfer, { TransferComfrimParams } from "./ComfirmTransfer";
 import ComfirmMintMrc20, { MintMrc20ComfrimParams } from "./ComfirmMintMrc20";
@@ -86,15 +82,9 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
     const [mintInfoLoading, setMintInfoLoading] = useState(false);
     const [mintInfoStatus, setMintInfoStatus] = useState('');
     const [mintMrc20Info, setMintMrc20Info] = useState<API.MRC20TickInfo>();
-    const [IdCoinInfo, setIdCoinInfo] = useState<API.IdCoin>();
     const [shovel, setShowel] = useState<API.MRC20Shovel[]>();
     const [list, setList] = useState<API.UserMrc20Asset[]>([]);
     const [refetch, setRefetch] = useState<boolean>(false)
-
-    // mint Idcoin 
-    const [comfirmVisible, setComfirmVisible] = useState(false)
-    const [mintIdCoinOrder, setMintIdCoinOrder] = useState<API.MintIdCoinPreRes & { _gasFee: number, errMsg?: string }>();
-    const [addressMintState, setAddressMintState] = useState<number>(0)
 
     // transfer mrc20
     const [transferVisible, setTransferVisible] = useState(false);
@@ -164,7 +154,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
         const fetchMrc20Info = async () => {
             if (!mintTokenID) return;
             setShowel([])
-            setIdCoinInfo(undefined)
             setMintInfoLoading(true)
             setMintInfoStatus('validating')
             const params = {};
@@ -175,26 +164,8 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
             }
             const { code, message, data } = await getMrc20Info(network, params);
             let _shovels: API.MRC20Shovel[] = [];
-            let _idCoin: API.IdCoin | undefined = undefined;
-            let _addressMintState = 0;
-            if (data && data.mrc20Id) {
-                const params: any = { tickId: data.mrc20Id };
+            if (data && data.pinCheck && data.pinCheck.count) {
                 if (btcAddress) {
-                    params.address = btcAddress
-                }
-                const idCoinRet = await getIdCoinInfo(network, params);
-                if (idCoinRet.code === 0 && idCoinRet.data) {
-                    _idCoin = idCoinRet.data;
-                    if (btcAddress && authParams) {
-                        const mintOrder = await getIdCoinMintOrder(network, { tickId: data.mrc20Id, address: btcAddress }, { headers: { ...authParams } });
-                        if (mintOrder.code === 0 && mintOrder.data && mintOrder.data.addressMintState === 1) {
-                            _addressMintState = 1
-                        }
-                    }
-                }
-            }
-            if (!_idCoin || _addressMintState === 1) {
-                if (btcAddress && data && data.pinCheck && data.pinCheck.count) {
                     const { data: ret, code } = await getMrc20AddressShovel(network, { tickId: data.mrc20Id, address: btcAddress, cursor: 0, size: 100 });
                     if (code === 0 && ret && ret.list) {
                         const checks = await checkPinUtxoInfo(network, { outPoints: ret.list.map(item => item.output) })
@@ -213,8 +184,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
             if (didCancel) return;
             setMintInfoLoading(false)
             setShowel(_shovels)
-            setIdCoinInfo(_idCoin)
-            setAddressMintState(_addressMintState)
             if (data && data.mrc20Id) {
                 setMintMrc20Info(data);
                 setMintInfoStatus('success')
@@ -327,80 +296,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
             ),
         });
     }
-    const mintIdCoin = async () => {
-        if (!connected || !btcAddress || !btcConnector || !mintIdCoinOrder) return;
-
-        const pass = await checkWallet();
-        if (!IdCoinInfo) return;
-        try {
-
-
-            if (!pass) throw new Error("Account change");
-
-            const { rawTx } = await buildMintIdCointPsbt(
-                mintIdCoinOrder,
-                feeRate,
-                btcAddress,
-                network
-            )
-            const commitRes = await mintIdCoinCommit(network, {
-                orderId: mintIdCoinOrder.orderId,
-                commitTxOutInscribeIndex: 0,
-                commitTxOutMintIndex: 1,
-                commitTxRaw: rawTx,
-            }, { headers: authParams })
-            console.log(commitRes)
-            if (commitRes.code !== 0) throw new Error(commitRes.message)
-            await addUtxoSafe(btcAddress, [{ txId: commitRes.data.commitTxId, vout: 2 }])
-            setMintIdCoinOrder(undefined)
-            setComfirmVisible(false)
-            setSuccessProp({
-                show: true,
-                onClose: () => {
-                    setSuccessProp(DefaultSuccessProps);
-                    form.setFieldValue('type', 'mint')
-                },
-                onDown: () => {
-                    setSuccessProp(DefaultSuccessProps);
-                    form.resetFields();
-                    history.push('/mrc20History?tab=ID-Coins Mint')
-
-                },
-                title: <Trans>Mint</Trans>,
-                tip: <Trans>Successful</Trans>,
-                okText: <Trans>OK</Trans>,
-                txs: [
-                    {
-                        label: 'Commit TxId',
-                        txid: commitRes.data.commitTxId
-                    },
-                    {
-                        label: 'Reveal Inscribe TxId',
-                        txid: commitRes.data.revealInscribeTxId
-                    },
-                    {
-                        label: 'Reveal Mint TxId',
-                        txid: commitRes.data.revealMintTxId
-                    },
-
-                ],
-                children: (
-                    <div className="inscribeSuccess">
-                        <div className="tips">
-                            <InfoCircleOutlined />
-                            <span><Trans>Current minting transaction status is Pending. Please wait for the minting transaction to be confirmed before transferring or trading this token.</Trans></span>
-                        </div>
-                    </div>
-                ),
-            });
-        } catch (err) {
-            setMintIdCoinOrder(undefined)
-            setComfirmVisible(false)
-
-            throw err
-        }
-    }
-
     const success = (title: string, ret: any) => {
         setSuccessProp({
             show: true,
@@ -484,44 +379,7 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
                 })
             } else {
                 if (type === 'mint') {
-                    if (IdCoinInfo && addressMintState === 0) {
-                        if (!connected || !btcAddress || !btcConnector) return;
-                        const pass = await checkWallet();
-                        if (!pass) throw new Error("Account change");
-                        if (!IdCoinInfo) return;
-
-                        const prePayload = {
-                            networkFeeRate: feeRate,
-                            tickId: IdCoinInfo.mrc20Id,
-                            outAddress: btcAddress,
-                            outValue: 546,
-                        }
-                        const { code, message, data } = await mintIdCoinPre(network, prePayload, { headers: { ...authParams } })
-                        if (code !== 0) throw new Error(message);
-                        let fee = "0";
-                        let errMsg = ''
-                        try {
-
-
-                            const { fee: _fee } = await buildMintIdCointPsbt(
-                                data,
-                                feeRate,
-                                btcAddress,
-                                network,
-                                false,
-                                false
-                            )
-                            fee = _fee
-                        } catch (e: any) {
-                            errMsg = e.message
-                        }
-                        setMintIdCoinOrder({ ...data, _gasFee: Number(fee), errMsg })
-                        setComfirmVisible(true)
-                    } else {
-                        await beforeMintMrc20()
-                    }
-
-
+                    await beforeMintMrc20()
                 } else if (
                     type === 'transfer'
                 ) {
@@ -729,7 +587,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
                     </div>
                 ),
             });
-            setComfirmVisible(false)
             setMintComfirmParams(undefined)
 
         } catch (e: any) {
@@ -756,10 +613,7 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
 
             }
             if (type === 'mint') {
-                if (IdCoinInfo && addressMintState === 0) {
-                    await mintIdCoin()
-
-                } else {
+                {
                     if (!mintMrc20Info) return;
                     if (Number(mintMrc20Info.pinCheck.count) && pins.length < Number(mintMrc20Info.pinCheck.count)) {
                         throw new Error(`Select  ${mintMrc20Info.pinCheck.count} PINs`)
@@ -915,11 +769,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
             return 'Transfer'
         }
         if (type === 'mint') {
-            if (IdCoinInfo) {
-                if (!IdCoinInfo.isFollowing) {
-                    return 'Follow And Mint'
-                }
-            }
             if (mintMrc20Info) {
                 if (mintMrc20Info.mintable === false) {
                     return 'Non-mintable'
@@ -928,7 +777,7 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
             return 'Mint'
         }
         { type === 'deploy' ? 'Deploy' : type === 'mint' ? (mintMrc20Info && mintMrc20Info.mintable === false) ? 'Non-mintable' : 'Mint' : 'Transfer' }
-    }, [type, mintMrc20Info, IdCoinInfo])
+    }, [type, mintMrc20Info])
 
     return <div className="mrc20Form">
         <ConfigProvider
@@ -1344,16 +1193,12 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
                                         <Col offset={sm ? 5 : 0} span={sm ? 19 : 24}> <Spin spinning={mintInfoLoading} style={{ minHeight: 100 }}>
 
                                             {
-                                                IdCoinInfo && <> <div style={{ color: 'var(--primary)', marginBottom: 20 }}><Trans>Detail</Trans></div><IdCoinCard mintMrc20Info={IdCoinInfo} /></>
-                                            }
-
-                                            {
-                                                (!IdCoinInfo && mintMrc20Info) && <> <div style={{ color: 'var(--primary)', marginBottom: 20 }}><Trans>Detail</Trans></div><MRC20DetailCard mintMrc20Info={mintMrc20Info} /></>
+                                                mintMrc20Info && <> <div style={{ color: 'var(--primary)', marginBottom: 20 }}><Trans>Detail</Trans></div><MRC20DetailCard mintMrc20Info={mintMrc20Info} /></>
                                             }
                                         </Spin>
                                         </Col>
                                     </Row>
-                                    {((!IdCoinInfo || (IdCoinInfo && addressMintState === 1)) && mintMrc20Info && Number(mintMrc20Info.pinCheck.count) > 0) && <>
+                                    {(mintMrc20Info && Number(mintMrc20Info.pinCheck.count) > 0) && <>
                                         {(shovel && shovel.length > 0) ?
                                             <Row gutter={[0, 0]}>
                                                 <Col offset={sm ? 5 : 0} span={sm ? 19 : 24}>
@@ -1386,11 +1231,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
                                     </>}
                                     <Row gutter={[0, 0]}>
                                         <Col offset={sm ? 5 : 0} span={sm ? 19 : 24}>
-                                            {
-                                                (IdCoinInfo && addressMintState === 0) && <> <Card style={{ marginBottom: 20, border: '1px solid #D4F66B' }} styles={{ body: { padding: '10px 15px', textAlign: "left", color: '#D4F66B', fontSize: 12 } }}>
-                                                    <Trans>To mint the ID Coin, you need to become a follower of the Deployer. We will help you complete the follow and mint the ID Coin.</Trans>
-                                                </Card></>
-                                            }
                                         </Col>
                                     </Row>
 
@@ -1441,7 +1281,6 @@ export default ({ setTab }: { setTab: (tab: string) => void }) => {
         </Row>
         <DeployComfirm {...deployComfirmProps} submiting={submiting} />
         <SuccessModal {...successProp}></SuccessModal>
-        <ComfirmMintIdCoin show={comfirmVisible} onClose={() => { setComfirmVisible(false) }} idCoin={IdCoinInfo} order={mintIdCoinOrder} submiting={submiting} handleSubmit={submit} />
 
         <ComfirmTransfer show={transferVisible} onClose={() => { setTransferVisible(false); setTransfeComfirmParams(undefined); setComfirming(false) }} params={transfeComfirmParams} submiting={submiting} handleSubmit={transferMrc20} />
         <ComfirmMintMrc20 show={mintVisible} onClose={() => { setMintVisible(false); setMintComfirmParams(undefined); setComfirming(false) }} params={mintComfirmParams} submiting={submiting} handleSubmit={mintMrc20} />

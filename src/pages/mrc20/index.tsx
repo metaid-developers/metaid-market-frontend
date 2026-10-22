@@ -127,7 +127,7 @@ export default () => {
                             </div>
 
                             <div className="detail">
-                                <span className='avatars'><span className='metaid'><Trans>Deployer</Trans></span><MetaIdAvatar size={20} avatar={mrc20Info.deployerUserInfo && mrc20Info.deployerUserInfo.avatar} /> {mrc20Info.deployerUserInfo && mrc20Info.deployerUserInfo.name || mrc20Info.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</span>
+                                <span className='avatars'><span className='metaid'><Trans>Deployer</Trans></span><MetaIdAvatar size={20} avatar={mrc20Info.deployerUserInfo?.avatar || ""} /> {mrc20Info.deployerUserInfo?.name || mrc20Info.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</span>
                                 <span className='metaid'>MetaID : {mrc20Info.deployerMetaId.replace(/(\w{6})\w+(\w{5})/, "$1...")}</span>
                             </div>
                         </div>
@@ -138,11 +138,11 @@ export default () => {
                             <span><Trans>Supply</Trans> : <NumberFormat value={mrc20Info.totalSupply} /> </span>
                         </div>
                         <div className="slider">
-                            <Progress percent={Number(mrc20Info.supply / mrc20Info.totalSupply) * 100} showInfo={false} />
+                            <Progress percent={(Number(mrc20Info.supply) / Number(mrc20Info.totalSupply)) * 100} showInfo={false} />
                         </div>
                         <div className="sliderNumber">
 
-                            <NumberFormat value={Number(mrc20Info.supply / mrc20Info.totalSupply) * 100} floor precision={4} suffix=' %' />
+                            <NumberFormat value={(Number(mrc20Info.supply) / Number(mrc20Info.totalSupply)) * 100} floor precision={4} suffix=' %' />
                         </div>
                     </div>
 

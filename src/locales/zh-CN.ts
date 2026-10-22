@@ -75,17 +75,11 @@ export default {
   "All Minting": "铸造中",
   "ID Coins": "ID Coins",
   "All Minted": "已铸造",
-  "When you choose to redirect to our partnered third-party trading platform through this link, please proactively assess the trading risks and be prepared to assume these risks yourself. We cannot guarantee the absolute safety of the transaction.":
-    "当您选择通过此链接重定向到我们合作的第三方交易平台时，请主动评估交易风险，并准备自行承担这些风险。我们无法保证交易的绝对安全。",
-  "Trade  Notification": "交易通知",
-  "I am aware of the above risks": "我已了解以上风险",
   "Follow successfully! Please wait for the transaction to be confirmed!":
     "关注成功！请等待交易确认！",
   id: "ID",
   Ticker: "代币",
-  "Followers Limit": "关注者限制",
   Supply: "供应",
-  "Liquidity Per Mint": "每次铸造的流动性",
   Pool: "池子",
   "Progress%": "进度%",
   Message: "信息",
@@ -134,8 +128,6 @@ export default {
   Quantity: "数量",
   Hash: "哈希",
   Followers: "关注者",
-  "You can trade ID-coin on the third-party DEX Orders.exchange, which we have partnered with. Orders.exchange and this marketplace are two separate and independent applications.":
-    "您可以在我们合作的第三方DEX Orders.exchange上交易ID-coin。Orders.exchange和此市场是两个独立的应用程序。",
   "Redeem for BTC": "兑换BTC",
   Redeem: "兑换",
   "Confirm Redeem Liquidity": "确认兑换流动性",
@@ -145,9 +137,6 @@ export default {
   "Burn ID Coin": "销毁ID Coin",
   Amount: "数量",
   "Redeem BTC": "兑换BTC",
-  "Alternatively, you can go to Orders.exchange to trade at more reasonable prices.":
-    "或者，您可以前往Orders.exchange以更合理的价格交易。",
-  "Go To Orders.Exchange": "去Orders.Exchange",
   "Confiirm Redeem": "确认兑换",
   "Proportion%": "占比%",
   Successful: "成功",
@@ -181,8 +170,6 @@ export default {
   "Initial Price": "初始价格",
   "Leave your message to your followers.": "给您的关注者留言。",
   "Click here for more info": "点击这里查看更多信息",
-  "We've partnered w/ Orders.exchange to offer 'Minting is Liquidating' for ID-Coin. When deploying ID-coin, users can set a requirement to provide liquidity to the corresponding trading pair on Orders.exchange. Min allowed is 0.0001 BTC, max is 10 BTC.":
-    "我们与Orders.exchange合作，为ID-Coin提供“铸造即流动性”。部署ID-coin时，用户可以设置要求为Orders.exchange上相应交易对提供流动性。最小允许为0.0001 BTC，最大为10 BTC。",
   Requirement: "要求",
   "ID Coin Minting: Only followers of deployer can mint":
     "ID Coin铸造：只有部署者的关注者才能铸造",

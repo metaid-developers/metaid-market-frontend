@@ -32,7 +32,7 @@ export default ({ mintMrc20Info }: Props) => {
                     label: <Trans>Deployer</Trans>,
                     children: <div className="deployer">
                         <div className="deployerInfo">
-                            <MetaIdAvatar size={20} avatar={mintMrc20Info.deployerUserInfo.avatar} /><div className="deployerName">{mintMrc20Info.deployerUserInfo.name || mintMrc20Info.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</div>
+                            <MetaIdAvatar size={20} avatar={mintMrc20Info.deployerUserInfo?.avatar || ""} /><div className="deployerName">{mintMrc20Info.deployerUserInfo?.name || mintMrc20Info.deployerAddress.replace(/(\w{5})\w+(\w{3})/, "$1...$2")}</div>
                         </div>
                         <div className="MetaId">
                             MetaID:{mintMrc20Info.deployerMetaId.replace(/(\w{6})\w+(\w{5})/, "$1...")}
