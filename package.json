@@ -40,5 +40,6 @@
     "overrides": {
       "elliptic": "^6.6.1"
     }
-  }
+  },
+  "packageManager": "pnpm@8.15.9"
 }
