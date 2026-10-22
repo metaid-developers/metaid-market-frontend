@@ -326,4 +326,6 @@ export default {
   'Upload Image': '上传图片',
   'Select Network': '选择网络',
 
+  "Liquidity Per Mint": "每次铸造的流动性",
+  "Followers Limit": "关注者限制",
 };

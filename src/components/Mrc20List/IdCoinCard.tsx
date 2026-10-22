@@ -10,8 +10,9 @@ type Props = {
     record: API.MRC20Info
     handleFollow: (record: API.MRC20Info) => void;
     followed?: boolean;
+    showMintNotice?: (record: API.MRC20Info) => void;
 }
-export default ({ record, handleFollow, followed }: Props) => {
+export default ({ record, handleFollow, followed, showMintNotice }: Props) => {
     const { network } = useModel('wallet')
 
     const percent = ((Number(record.supply) / Number(record.totalSupply)) * 100) || 0;
@@ -43,6 +44,12 @@ export default ({ record, handleFollow, followed }: Props) => {
                     </Progress>
                 </div>
                 <Space>
+                    {
+                        showMintNotice && record.mintable && <Button size='small' onClick={(e) => {
+                            e.stopPropagation();
+                            showMintNotice(record)
+                        }} type='primary'>Mint</Button>
+                    }
                     <Button size='small' onClick={(e) => {
                         e.stopPropagation();
                         history.push(`/idCoin/${record.tick}`)

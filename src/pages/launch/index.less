@@ -1,0 +1,314 @@
+.launchPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  .launchWrap {
+    max-width: calc(100vw - 12px);
+    .launchCollapse {
+      margin-top: 24px;
+      background: rgba(192, 240, 121, 0.09);
+      margin-bottom: 24px;
+      border: 1px solid #d4f66b;
+      border-radius: 16px;
+      padding: 32px 24px 12px;
+      .ant-collapse > .ant-collapse-item > .ant-collapse-header {
+        padding: 0;
+      }
+      .collapseIcon{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .collapseLabel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        .title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #d4f66b;
+          margin-bottom: 8px;
+          text-align: center;
+          line-height: 1.2;
+        }
+        .subTitle {
+          font-size: 12px;
+          line-height: 24px;
+          color: rgba(255, 255, 255, 0.8);
+          margin-bottom: 4px;
+        }
+      }
+      .card {
+        border-radius: 16px;
+        opacity: 1;
+        padding: 12px 16px;
+        background: #1f241b;
+        .item {
+          display: flex;
+          align-items: flex-start;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 10px;
+          line-height: 20px;
+          &+ .item {
+            margin-top: 10px;
+          }
+          .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2d3429;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: bold;
+            gap: 6px;
+          }
+        }
+      }
+      .tip {
+        margin-top: 16px;
+        text-align: center;
+        color: rgba(255, 109, 109, 0.8);
+        font-size: 12px;
+        font-weight: normal;
+      }
+    }
+  }
+  .user {
+    // margin-top: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    .userAvatar {
+      position: relative;
+      .mask {
+        z-index: 1;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        cursor: pointer;
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+    .name {
+      margin: 9px 0 4px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffffff;
+    }
+    .metaid {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+  .formWrap {
+    margin-top: 24px;
+    // width: 784px;
+    max-width: calc(100vw - 48px);
+    .ant-form-item-has-error {
+      border: 1px solid #ff4d4f;
+      margin-bottom: 36px;
+    }
+    .ant-form-item .ant-form-item-label > label .ant-form-item-optional {
+      color: #c0f079;
+    }
+    .ant-form-item .ant-form-item-explain-error {
+      position: absolute;
+      right: 0;
+      bottom: 0px;
+      text-align: end;
+      white-space: nowrap;
+    }
+    .ant-form-item .ant-form-item-label > label {
+      color: #ffffff;
+    }
+    .totalSupply {
+      margin-left: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .formItem {
+      background: #22281c;
+      border-radius: 8px;
+      padding: 10px 23px;
+
+      .ant-input {
+        padding-left: 0;
+        // color: rgba(255, 255, 255, 0.5);
+        text-align: end;
+        input {
+          text-align: right;
+        }
+      }
+      .ant-input-number .ant-input-number-input {
+        padding-left: 0;
+        // color: rgba(255, 255, 255, 0.5);
+        text-align: end;
+        input {
+          text-align: end;
+        }
+      }
+      .FeeRateWrap {
+        display: flex;
+        justify-content: space-between;
+        //   background-color: rgba(255, 255, 255, 0.08);
+        //   padding: 31px 44px;
+        .options {
+          flex-grow: 1;
+        }
+        border-radius: 8px;
+        .feeRateItem {
+          cursor: pointer;
+          border: 1.19px solid rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 124px;
+          text-align: center;
+          color: #fff;
+          &.active {
+            border: 1.19px solid #d4f66b;
+            color: #d4f66b;
+            .Feetime {
+              color: #d4f66b;
+            }
+          }
+          .Feelabel {
+            font-size: 14px;
+            margin-bottom: 9px;
+          }
+          .Feevalue {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 9px;
+          }
+          .Feetime {
+            color: #909399;
+            font-size: 14px;
+          }
+        }
+        .custom {
+          //   margin-top: 16px;
+          margin-left: 12px;
+          border-radius: 9.54px;
+          border: 1.19px solid rgba(255, 255, 255, 0.2);
+          padding: 22px 18px;
+          cursor: pointer;
+          .customInput {
+            input {
+              padding: 0;
+              text-align: left;
+              border-radius: 0;
+            }
+          }
+          &.active {
+            border: 1.19px solid #d4f66b;
+            color: #d4f66b;
+            .customInput {
+              input {
+                text-align: left;
+                color: #d4f66b;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  .requirement {
+    margin: 21px auto;
+    border-radius: 16px;
+    box-sizing: border-box;
+    border: 1px solid #008cff;
+    color: #ffffff;
+    padding: 10px 30px 16px;
+
+    .title {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      img {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+      }
+    }
+  }
+}
+.inscribeSuccess {
+  width: 100%;
+  .res {
+    width: 100%;
+    margin-top: 20px;
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      color: #ffffff;
+      &.item {
+        margin-bottom: 24px;
+      }
+      .value {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        img {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+  .tips {
+    color: var(--primary);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 20px;
+    .anticon {
+      margin-top: 4px;
+    }
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .launchPage {
+    .formWrap {
+      .formItem {
+        .FeeRateWrap {
+          display: block;
+          .custom {
+            margin-top: 16px;
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}

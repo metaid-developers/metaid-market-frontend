@@ -1,20 +1,22 @@
 import useIntervalAsync from '@/hooks/useIntervalAsync';
-import { getMrc20AddressUtxo, getMrc20Info } from '@/services/api';
-import { Button, ConfigProvider, Divider, Progress, Statistic, Tabs, TabsProps, Typography, Grid, Card, Row, Col, Space, message, Popover } from 'antd';
+import { getIdCoinInfo, getMrc20AddressUtxo, getMrc20Info, redeemPreview } from '@/services/api';
+import { Avatar, Button, ConfigProvider, Divider, Progress, Statistic, Tabs, TabsProps, Typography, Grid, Card, Row, Col, Tooltip, Space, message, Popover } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useMatch, useModel, history } from 'umi';
+import { useMatch, useModel, history, Link } from 'umi';
 import './idCoin.less'
 import Listed from './components/Listed';
 import NumberFormat from '@/components/NumberFormat';
-import { LeftOutlined, LinkOutlined, RightOutlined, ShareAltOutlined, XOutlined } from '@ant-design/icons';
+import { LeftOutlined, LinkOutlined, QuestionCircleOutlined, RightOutlined, ShareAltOutlined, XOutlined } from '@ant-design/icons';
 import Activeity from './components/Activeity';
 import MyActiveity from './components/MyActiveity';
 import MetaIdAvatar from '@/components/MetaIdAvatar';
+import MRC20Icon from '@/components/MRC20Icon';
 import { formatSat, openWindowTarget, switchAvatarToMetaDataIcon } from '@/utils/utlis';
 import btcIcon from "@/assets/logo_btc@2x.png";
-import { getMetaIdUrlByNet } from '@/config';
+import { getCreatePinFeeByNet, getMetaIdUrlByNet } from '@/config';
 import copy from 'copy-to-clipboard';
 import { addUtxoSafe } from '@/utils/psbtBuild';
+import ConfirmRedeem from '@/components/ConfirmRedeem';
 import Trans from '@/components/Trans';
 const { useBreakpoint } = Grid;
 const items: TabsProps['items'] = [
@@ -39,18 +41,23 @@ export default () => {
     const screens = useBreakpoint();
     const match = useMatch('/idCoin/:tick');
     const { network, btcAddress, authParams, btcConnector, connected, connect, feeRate } = useModel('wallet')
-    const [idCoin, setIdCoin] = useState<API.MRC20TickInfo>();
-    const [isFollowing, setIsFollowing] = useState<boolean>(false)
+    const [idCoin, setIdCoin] = useState<API.IdCoin>();
     const [showListBtn, setShowListBtn] = useState<boolean>(false)
     const [bal, setBal] = useState<number>(0);
+    const [showRedeem, setShowRedeem] = useState<boolean>(false)
+    const [redeemAmount, setRedeemAmount] = useState<number>(0);
+    const [assetUtxoIds, setAssetUtxoIds] = useState<string[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const fetchData = useCallback(async () => {
         if (!match || !match.params.tick) return;
         const params: any = {};
         params.tick = match.params.tick;
-        const { data } = await getMrc20Info(network, params);
+        if (btcAddress) {
+            params.address = btcAddress
+        }
+        const { data } = await getIdCoinInfo(network, params);
         setIdCoin(data);
-    }, [match, network])
+    }, [match, network, btcAddress])
 
     const handleFollow = async () => {
         if (!connected) {
@@ -72,12 +79,14 @@ export default () => {
                 options: {
                     noBroadcast: 'no',
                     feeRate: feeRate,
+                    // service: getCreatePinFeeByNet(network),
                 },
             });
             if (followRes.status) throw new Error(followRes.status)
             if (followRes && followRes.revealTxIds && followRes.revealTxIds[0]) {
                 message.success('Follow successfully! Please wait for the transaction to be confirmed!')
-                setIsFollowing(true)
+                setIdCoin({ ...idCoin, isFollowing: true })
+                // await fetchData()
                 await addUtxoSafe(btcAddress, [{ txId: followRes.commitTxId, vout: 1 }])
             } else {
                 throw new Error('Follow failed')
@@ -97,11 +106,14 @@ export default () => {
             });
             let _showListBtn = false;
             let _bal = 0
+            let maxAmount = 0
+            const UTXOs: string[] = []
             if (code === 0) {
 
                 _bal = utxoList.list.reduce((a, item) => {
                     if (item.orderId === '') {
                         const utxoAmount = item.mrc20s.reduce((a, b) => {
+                            UTXOs.push(b.txPoint.replace(':', '_'))
                             return a + Number(b.amount)
                         }, 0);
                         return a + utxoAmount
@@ -114,9 +126,26 @@ export default () => {
                 if (find) {
                     _showListBtn = true
                 }
+                const preview = await redeemPreview(network, { sellerAddress: btcAddress, tickId: idCoin.mrc20Id, networkFeeRate: feeRate, assetUtxoIds: UTXOs }, {
+                    headers: {
+                        ...authParams,
+                    },
+                });
+                if (preview.data.assetCoinList) {
+                    let _values: number[] = []
+                    preview.data.assetCoinList.forEach(item => {
+                        _values = [..._values, ...item.split('-').map(num => Number(num))]
+                    })
+                    maxAmount = Math.max(..._values)
+                }
+
+
+
             }
             setShowListBtn(_showListBtn)
             setBal(_bal)
+            setRedeemAmount(maxAmount)
+            setAssetUtxoIds(UTXOs)
         } catch (err) {
 
         }
@@ -146,6 +175,7 @@ export default () => {
             className="pageBack"
             onClick={() => {
                 history.back();
+                // shareX()
             }}
         >
             <LeftOutlined /> <Trans>Back</Trans>
@@ -155,7 +185,7 @@ export default () => {
 
                 <Card className='idCoinH' bordered={false} styles={{ body: { display: 'flex', gap: 16, flexWrap: 'wrap', padding: 0 } }} style={{ background: 'rgba(0,0,0,0)' }}>
                     <div style={{ cursor: 'pointer' }} onClick={() => { window.open(getMetaIdUrlByNet(network) + idCoin.deployerMetaId) }}>
-                        <MetaIdAvatar avatar={idCoin.deployerUserInfo?.avatar || ""} size={100} />
+                        <MetaIdAvatar avatar={idCoin.deployerUserInfo.avatar} size={100} />
                     </div>
 
                     <div className="right" style={{ flexGrow: 1 }}>
@@ -164,9 +194,15 @@ export default () => {
                                 <Typography.Title level={4} style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                                     <div onClick={() => { window.open(getMetaIdUrlByNet(network) + idCoin.deployerMetaId) }}>
                                         {idCoin.tick}
-                                    </div> <Button style={{ height: 24, fontSize: 10 }} shape="round" disabled={isFollowing} size='small' onClick={(e) => { e.stopPropagation(); handleFollow() }} type='link'> <Trans>{isFollowing ? 'Following' : 'Follow'}</Trans></Button>
+                                    </div> <Button style={{ height: 24, fontSize: 10 }} shape="round" disabled={idCoin.isFollowing} size='small' onClick={(e) => { e.stopPropagation(); handleFollow() }} type='link'> <Trans>{idCoin.isFollowing ? 'Following' : 'Follow'}</Trans></Button>
                                 </Typography.Title>
                                 <Typography.Text copyable={{ text: idCoin.deployerMetaId }} className="metaid"> MetaID: {idCoin.deployerMetaId.replace(/(\w{6})\w+(\w{5})/, "$1...")}</Typography.Text>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                                <Typography.Text className="ticker"><NumberFormat value={idCoin.followersCount} /> </Typography.Text>
+                                <div>
+                                   <Trans>Followers</Trans> 
+                                </div>
                             </div>
 
                         </div>
@@ -175,11 +211,11 @@ export default () => {
                             <span><Trans>Supply</Trans> : <NumberFormat value={idCoin.totalSupply} /> </span>
                         </div>
                         <div className="slider" style={{ marginTop: 0 }}>
-                            <Progress percent={(Number(idCoin.supply) / Number(idCoin.totalSupply)) * 100} showInfo={false} />
+                            <Progress percent={Number(idCoin.supply / idCoin.totalSupply) * 100} showInfo={false} />
                         </div>
                         <div className="sliderNumber">
 
-                            <NumberFormat value={((Number(idCoin.supply) / Number(idCoin.totalSupply)) * 100) || 0} floor precision={4} suffix=' %' />
+                            <NumberFormat value={(Number(idCoin.supply / idCoin.totalSupply) * 100) || 0} floor precision={4} suffix=' %' />
                         </div>
                     </div>
                 </Card>
@@ -197,6 +233,7 @@ export default () => {
                         <Statistic valueStyle={{ display: 'flex', alignItems: 'center', fontSize: 16 }} title={<Space size={4} style={{ cursor: 'pointer' }} onClick={() => { history.push('/holders/' + idCoin.tick) }}><Trans>Holders</Trans> <RightOutlined style={{ fontSize: 10 }} /></Space>} value={idCoin.holders} />
                     </Col>
                 </Row>
+                
                 <Space>
                     {
                         showListBtn && <ConfigProvider
@@ -212,6 +249,32 @@ export default () => {
                             <Button loading={loading} disabled={!showListBtn} block onClick={() => { history.push('/list/idCoins/' + idCoin.tick) }}><Trans>List For Sale</Trans> </Button>
                         </ConfigProvider>
                     }
+
+                    {
+                        showListBtn && <ConfigProvider
+                            theme={{
+                                components: {
+                                    Button: {
+                                        "defaultBorderColor": "rgb(212, 246, 107)",
+                                        "defaultColor": "rgb(212, 246, 107)"
+                                    },
+                                },
+                            }}
+                        >
+                            <Button loading={loading} type='primary' disabled={!showListBtn} block onClick={() => { setShowRedeem(true) }}><Trans>Redeem for BTC</Trans> </Button>
+                        </ConfigProvider>
+                    }
+
+
+
+                    {/* <Button type='primary'  disabled={idCoin.isFollowing} onClick={(e) => { e.stopPropagation(); handleFollow() }} > {idCoin.isFollowing ? 'Following' : 'Follow'}</Button> */}
+
+                    {
+                        idCoin.mintable && <div className='mintBtn'>
+                            <Button type='primary' block onClick={() => { history.push('/inscribe/MRC-20/' + idCoin.tick) }}><Trans>Mint</Trans></Button>
+                        </div>
+                    }
+
 
                     <Popover content={<div className='sharePop' >
                         <div className="item" onClick={copyLink}>
@@ -249,7 +312,7 @@ export default () => {
                 {
                     key: '1',
                     label: <Trans>Listed</Trans>,
-                    children: <Listed mrc20Id={idCoin.mrc20Id || ''} metaData={idCoin ? switchAvatarToMetaDataIcon(idCoin.deployerUserInfo?.avatar || '') : ''} />,
+                    children: <Listed mrc20Id={idCoin.mrc20Id || ''} metaData={idCoin ? switchAvatarToMetaDataIcon(idCoin.deployerUserInfo.avatar) : ''} />,
                 },
                 {
                     key: '2',
@@ -264,10 +327,18 @@ export default () => {
                 {
                     key: '4',
                     label: <Trans>My Listed</Trans>,
-                    children: <Listed mrc20Id={idCoin.mrc20Id || ''} showMy  metaData={idCoin ? switchAvatarToMetaDataIcon(idCoin.deployerUserInfo?.avatar || '') : ''}/>,
+                    children: <Listed mrc20Id={idCoin.mrc20Id || ''} showMy  metaData={idCoin ? switchAvatarToMetaDataIcon(idCoin.deployerUserInfo.avatar) : ''}/>,
                 },
             ]} />}
         </ConfigProvider>
+        {idCoin && showListBtn && assetUtxoIds.length > 0 && <ConfirmRedeem show={showRedeem} idCoin={idCoin} onClose={() => {
+            setShowRedeem(false)
+            fetchUserUtxo()
+        }} amount={redeemAmount}
+            assetUtxoIds={assetUtxoIds}
+            btcPrice={0}
+            handelRedeem={fetchUserUtxo}
+        />}
 
 
     </div>

@@ -59,6 +59,10 @@ export default () => {
         };
     }, [network, page, size, orderBy, sortType, searchWord])
 
+    const showMintNotice = (record: API.MRC20Info) => {
+        history.push({ pathname: '/inscribe/MRC-20/' + record.tick }, { from: 'idCoins' })
+    }
+
     const handleFollow = async (record: API.MRC20Info) => {
         if (!connected) {
             await connect();
@@ -187,6 +191,12 @@ export default () => {
 
                         </Progress>
                     </div>
+                    {
+                        record.mintable && <Button size='small' onClick={(e) => {
+                            e.stopPropagation();
+                            showMintNotice(record)
+                        }} type='primary'><Trans>Mint</Trans></Button>
+                    }
 
 
                 </div>
@@ -260,7 +270,7 @@ export default () => {
                 dataSource={list}
                 renderItem={(item) => (
                     <List.Item>
-                        <IdCoinCard record={item} handleFollow={handleFollow} />
+                        <IdCoinCard record={item} handleFollow={handleFollow} showMintNotice={showMintNotice} />
                     </List.Item>
                 )}
                 rowKey={"mrc20Id"}

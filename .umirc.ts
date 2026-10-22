@@ -6,6 +6,7 @@ export default defineConfig({
     { path: "/market/:tab", component: "index" },
     { path: "/market/:tab/:mrc20Tab", component: "index" },
     { path: "/inscribe", component: "inscribe" },
+    { path: "/launch", component: "launch" },
     { path: "/sale", component: "sale" },
     { path: "/order", component: "detail" },
     { path: "/history", component: "history" },
