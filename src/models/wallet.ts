@@ -24,6 +24,19 @@ const checkExtension = () => {
   return true;
 };
 type AuthParams = { "X-Signature": string; "X-Public-Key": string };
+// Auth lives in localStorage so login survives WebView/page reloads. The market
+// service only verifies a signature of the static message "metaid.market"
+// (no expiry), so the cached signature stays valid until disconnect.
+const readStorage = (key: string) =>
+  localStorage.getItem(key) ?? sessionStorage.getItem(key);
+const writeStorage = (key: string, value: string) => {
+  localStorage.setItem(key, value);
+  sessionStorage.removeItem(key);
+};
+const clearStorage = (key: string) => {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
+};
 export default () => {
   const [walletName, setWalletName] = useState<WalletName>("metalet");
   const [addressType, setAddressType] = useState<string>();
@@ -82,7 +95,7 @@ export default () => {
     if (publicKeySign.status) return;
     setNetwork(curNetwork);
     setAuthParams({ "X-Public-Key": publicKey, "X-Signature": publicKeySign });
-    sessionStorage.setItem(
+    writeStorage(
       "authParams",
       JSON.stringify({
         "X-Public-Key": publicKey,
@@ -97,7 +110,7 @@ export default () => {
       address: _wallet.address,
       pub: publicKey,
     };
-    sessionStorage.setItem("walletParams", JSON.stringify(_walletParams));
+    writeStorage("walletParams", JSON.stringify(_walletParams));
     setInitializing(true);
     setBtcConnector(_btcConnector);
     setConnected(true);
@@ -116,12 +129,12 @@ export default () => {
     );
     setUserBal(formatSat(bal.total));
     setAvatar(
-      _btcConnector.user.avatar
+      _btcConnector.user?.avatar
         ? `${getHostByNet(network)}${_btcConnector.user.avatar}`
         : ""
     );
-    setMetaid(_btcConnector.user.metaid);
-    setUserName(_btcConnector.user.name);
+    setMetaid(_btcConnector.user?.metaid ?? _btcConnector.metaid);
+    setUserName(_btcConnector.user?.name);
     setInitializing(false);
   };
 
@@ -135,8 +148,8 @@ export default () => {
     setMetaid("");
     setUserName("");
     setAuthParams(undefined);
-    sessionStorage.removeItem("walletParams");
-    sessionStorage.removeItem("authParams");
+    clearStorage("walletParams");
+    clearStorage("authParams");
   };
 
   const fetchFeeRate = useCallback(async () => {
@@ -189,13 +202,12 @@ export default () => {
         return;
       }
       setNetwork(_network);
-      const walletParams = sessionStorage.getItem("walletParams");
+      const walletParams = readStorage("walletParams");
       if (walletParams) {
         let _authParams: AuthParams | undefined = undefined;
-        if (sessionStorage.getItem("authParams")) {
-          _authParams = JSON.parse(
-            sessionStorage.getItem("authParams") || ""
-          ) as AuthParams;
+        const authParamsRaw = readStorage("authParams");
+        if (authParamsRaw) {
+          _authParams = JSON.parse(authParamsRaw) as AuthParams;
         }
         if (!_authParams) {
           disConnect();
@@ -260,12 +272,12 @@ export default () => {
           console.log(err, "getBalance");
         }
         setAvatar(
-          _btcConnector.user.avatar
+          _btcConnector.user?.avatar
             ? `${getHostByNet(network)}${_btcConnector.user.avatar}`
             : ""
         );
-        setMetaid(_btcConnector.user.metaid);
-        setUserName(_btcConnector.user.name);
+        setMetaid(_btcConnector.user?.metaid ?? _btcConnector.metaid);
+        setUserName(_btcConnector.user?.name);
         setInitializing(false);
       }
     }
