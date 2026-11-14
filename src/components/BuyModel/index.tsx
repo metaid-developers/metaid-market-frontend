@@ -58,8 +58,8 @@ export default ({ order, show, onClose }: Props) => {
 
   useEffect(() => {
     if (connected && window.metaidwallet) {
-      window.metaidwallet.btc.getBalance().then((ret) => {
-        setUserBalInfo(ret);
+      window.metaidwallet.btc.getBalance("BTC").then((ret) => {
+        setUserBalInfo(ret as { total: number; confirmed: number; unconfirmed: number });
       });
     }
   }, [network, connected]);
@@ -80,8 +80,8 @@ export default ({ order, show, onClose }: Props) => {
     }
     const address = await window.metaidwallet.btc.getAddress();
     if (connected && window.metaidwallet) {
-      window.metaidwallet.btc.getBalance().then((ret) => {
-        setUserBalInfo(ret);
+      window.metaidwallet.btc.getBalance("BTC").then((ret) => {
+        setUserBalInfo(ret as { total: number; confirmed: number; unconfirmed: number });
       });
     }
     if (order.orderState !== 1) return;
@@ -264,7 +264,7 @@ export default ({ order, show, onClose }: Props) => {
           </div>
         ),
       });
-    } catch (err) {
+    } catch (err: any) {
       console.log(err);
       message.error(err.message);
     }
@@ -313,12 +313,12 @@ export default ({ order, show, onClose }: Props) => {
                 <div className="label">
                 <Trans>Taker Fee</Trans>{orderWithPsbt&&orderWithPsbt.fee > 0 && `(${orderWithPsbt.feeRateStr}%)`}
                 </div>
-                <div className="value"><NumberFormat value={orderWithPsbt && orderWithPsbt.fee} isBig decimal={8} minDig={8} suffix=" BTC" /></div>
+                <div className="value"><NumberFormat value={orderWithPsbt?.fee ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" /></div>
               </div>
               <div className="feeItem">
                 <div className="label"><Trans>Transaction Fee</Trans></div>
                 <div className="value">
-                  <Spin spinning={calcing}><NumberFormat value={fee} isBig decimal={8} minDig={8} suffix=" BTC" /></Spin>
+                  <Spin spinning={calcing}><NumberFormat value={fee ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" /></Spin>
                 </div>
               </div>
               <div className="feeItem">

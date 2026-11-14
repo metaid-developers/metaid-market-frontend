@@ -26,6 +26,8 @@ import {
 } from "./orders";
 import { getMrc20OrderPsbt, getRawTx } from "@/services/api";
 const DUST_SIZE = 546;
+type PsbtInput = (typeof Psbt.prototype.data.inputs)[0];
+type PsbtInputExtended = PsbtInput & { hash: string; index: number };
 
 export function fillInternalKey2<T extends PsbtInput | PsbtInputExtended>(
   input: T,
@@ -162,11 +164,9 @@ export const commitMintMRC20PSBT = async (
     network: btcNetwork,
   });
 
-  psbt.data.globalMap.unsignedTx.tx.ins[revealInputIndex].hash = Buffer.from(
-    txId,
-    "hex"
-  ).reverse();
-  psbt.data.globalMap.unsignedTx.tx.ins[revealInputIndex].index = 0;
+  const unsignedTx = (psbt.data.globalMap.unsignedTx as any).tx;
+  unsignedTx.ins[revealInputIndex].hash = Buffer.from(txId, "hex").reverse();
+  unsignedTx.ins[revealInputIndex].index = 0;
   const toSignInputs = [];
   for (let i = 0; i < revealInputIndex; i++) {
     psbt.updateInput(
@@ -254,7 +254,7 @@ export const listMrc20Order = async (
     } catch (e: any) {}
   }
 
-  const psbtInput = {
+  const psbtInput: any = {
     hash: utxo.txId,
     index: utxo.outputIndex,
     witnessUtxo: ordinalPreTx.outs[utxo.outputIndex],
@@ -397,7 +397,7 @@ export const buildBuyMrc20TakePsbt = async (
   signPsbt: boolean = false
 ) => {
   initEccLib(ecc);
-  const { fee, priceAmount, outValue } = order;
+  const { fee, priceAmount } = order;
   const address = await window.metaidwallet.btc.getAddress();
   const utxos = (await getUtxos(address, network)).sort(
     (a, b) => b.satoshi - a.satoshi
@@ -423,10 +423,7 @@ export const buildBuyMrc20TakePsbt = async (
     manualCalcFee
   );
   const totalSpent =
-    Number(ret.fee) +
-    Number(order.priceAmount) +
-    Number(fee) -
-    Number(outValue);
+    Number(ret.fee) + Number(order.priceAmount) + Number(fee);
   return {
     rawTx: ret.rawTx,
     psbt: ret.psbt,

@@ -14,6 +14,7 @@ declare namespace API {
     detail: "string";
     fee: 0;
     feeRate: 0;
+    feeRateStr: string;
     orderId: "string";
     orderState: 1;
     outValue: 0;
@@ -372,6 +373,7 @@ declare namespace API {
     priceCoin: string;
     fee: number;
     feeRate: number;
+    feeRateStr: string;
     takePsbt: string;
     blockHeight: number;
     confirmationState: number;
@@ -404,6 +406,7 @@ declare namespace API {
     priceCoin: string;
     fee: number;
     feeRate: number;
+    feeRateStr: string;
     takePsbt: string;
     blockHeight: number;
     confirmationState: number;
