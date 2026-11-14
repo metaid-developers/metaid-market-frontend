@@ -61,8 +61,8 @@ export default ({ order, show, onClose }: Props) => {
 
   useEffect(() => {
     if (connected && window.metaidwallet) {
-      window.metaidwallet.btc.getBalance().then((ret) => {
-        setUserBalInfo(ret);
+      window.metaidwallet.btc.getBalance("BTC").then((ret) => {
+        setUserBalInfo(ret as { total: number; confirmed: number; unconfirmed: number });
       });
     }
   }, [network, connected]);
@@ -83,8 +83,8 @@ export default ({ order, show, onClose }: Props) => {
     }
     const address = await window.metaidwallet.btc.getAddress();
     if (connected && window.metaidwallet) {
-      window.metaidwallet.btc.getBalance().then((ret) => {
-        setUserBalInfo(ret);
+      window.metaidwallet.btc.getBalance("BTC").then((ret) => {
+        setUserBalInfo(ret as { total: number; confirmed: number; unconfirmed: number });
       });
     }
     if (order.orderState !== 1) return;
@@ -120,14 +120,14 @@ export default ({ order, show, onClose }: Props) => {
         if ((orderWithPsbt.priceAmount + orderWithPsbt.fee) > userBalInfo.total) {
           throw new Error("Insufficient balance");
         }
-        const { order, totalSpent, fee, error } = await buildBuyMrc20TakePsbt(orderWithPsbt, network, Number(feeRate), false, false);
-        console.log(order, totalSpent);
+        const { psbt, totalSpent, fee } = await buildBuyMrc20TakePsbt(orderWithPsbt, network, Number(feeRate), false, false);
+        console.log(psbt, totalSpent);
         if (didCancel) return;
         setCalcing(false);
         setTotalSpent(totalSpent);
-        setErrInfo(error || undefined);
-        setBuyPsbt(order);
-        setFee(fee);
+        setErrInfo(undefined);
+        setBuyPsbt(psbt);
+        setFee(Number(fee));
       } catch (err: any) {
         console.log(err);
         if (didCancel) return;
@@ -163,10 +163,15 @@ export default ({ order, show, onClose }: Props) => {
       if (ret.code !== 0) {
         throw new Error(ret.message);
       }
-      await addUtxoSafe(btcAddress, [{
-        txId: ret.data.txId,
-        vout: txOutputs.length - 1,
-      }])
+      const changeVout = txOutputs.findIndex(
+        (output, index) => index > 0 && output.address === btcAddress
+      );
+      if (changeVout >= 0) {
+        await addUtxoSafe(btcAddress, [{
+          txId: ret.data.txId,
+          vout: changeVout,
+        }]);
+      }
       onClose();
       setSuccessProp({
         show: true,
@@ -189,7 +194,7 @@ export default ({ order, show, onClose }: Props) => {
               <div className="item">
                 <div className="label"><Trans>Transaction Price</Trans></div>
                 <div className="value">
-                  <img src={btcIcon}></img> <NumberFormat value={totalSpent} isBig decimal={8} minDig={8} suffix=" BTC" />
+                  <img src={btcIcon}></img> <NumberFormat value={totalSpent ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" />
                 </div>
               </div>
               <div className="item">
@@ -214,7 +219,7 @@ export default ({ order, show, onClose }: Props) => {
           </div>
         ),
       });
-    } catch (err) {
+    } catch (err: any) {
       console.log(err);
       message.error(err.message);
     }
@@ -252,12 +257,12 @@ export default ({ order, show, onClose }: Props) => {
                 <div className="label">
                   <Trans>Taker Fee</Trans>{orderWithPsbt && orderWithPsbt.fee > 0 && `(${orderWithPsbt.feeRateStr}%)`}
                 </div>
-                <div className="value"><NumberFormat value={orderWithPsbt && orderWithPsbt.fee} isBig decimal={8} minDig={8} suffix=" BTC" /></div>
+                <div className="value"><NumberFormat value={orderWithPsbt?.fee ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" /></div>
               </div>
               <div className="feeItem">
                 <div className="label"><Trans>Transaction Fee</Trans></div>
                 <div className="value">
-                  <Spin spinning={calcing}><NumberFormat value={fee} isBig decimal={8} minDig={8} suffix=" BTC" /></Spin>
+                  <Spin spinning={calcing}><NumberFormat value={fee ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" /></Spin>
                 </div>
               </div>
               <div className="feeItem">
@@ -274,7 +279,7 @@ export default ({ order, show, onClose }: Props) => {
                 <div className="value">
                   <img src={btcIcon} alt="" className="btc" />
                   <span>
-                    <NumberFormat value={totalSpent} isBig decimal={8} minDig={8} suffix=" BTC" />
+                    <NumberFormat value={totalSpent ?? 0} isBig decimal={8} minDig={8} suffix=" BTC" />
                   </span>
                 </div>
               </div>

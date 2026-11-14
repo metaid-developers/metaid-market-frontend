@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MetaletWalletForBtc } from "@metaid/metaid";
 import {
   IMetaletWalletForBtc,
@@ -9,7 +9,7 @@ import { determineAddressInfo, formatSat } from "@/utils/utlis";
 import { getFeeRate } from "@/utils/mempool";
 import { curNetwork, getHostByNet } from "@/config";
 import useIntervalAsync from "@/hooks/useIntervalAsync";
-import { getBTCPrice } from "@/services/api";
+import { authChallenge, authLogin, authLogout, getBTCPrice } from "@/services/api";
 
 export type Network = "mainnet" | "testnet";
 type WalletName = "metalet";
@@ -23,10 +23,7 @@ const checkExtension = () => {
   }
   return true;
 };
-type AuthParams = { "X-Signature": string; "X-Public-Key": string };
-// Auth lives in localStorage so login survives WebView/page reloads. The market
-// service only verifies a signature of the static message "metaid.market"
-// (no expiry), so the cached signature stays valid until disconnect.
+type AuthParams = { "X-Session": string };
 const readStorage = (key: string) =>
   localStorage.getItem(key) ?? sessionStorage.getItem(key);
 const writeStorage = (key: string, value: string) => {
@@ -65,6 +62,39 @@ export default () => {
   const [feeRateType, setFeeRateType] = useState<string>("");
   const [feeRateModalVisible, setFeeRateModelVisible] =
     useState<boolean>(false);
+  const authRef = useRef<{ params?: AuthParams; expiresAt: number }>({ expiresAt: 0 });
+
+  const createAuthParams = useCallback(async (publicKey: string) => {
+    const challengeRet = await authChallenge(curNetwork, publicKey);
+    if (challengeRet.code !== 0) {
+      throw new Error(challengeRet.message);
+    }
+    const signature = await window.metaidwallet.btc.signMessage(
+      challengeRet.data.message
+    );
+    if ((signature as any).status) {
+      throw new Error((signature as any).status);
+    }
+    const loginRet = await authLogin(curNetwork, {
+      publicKey,
+      signature: signature as unknown as string,
+      nonce: challengeRet.data.nonce,
+    });
+    if (loginRet.code !== 0) {
+      throw new Error(loginRet.message);
+    }
+    const params = { "X-Session": loginRet.data.token };
+    authRef.current = { params, expiresAt: loginRet.data.expiresAt };
+    setAuthParams(params);
+    return params;
+  }, []);
+
+  const ensureAuthParams = useCallback(async (publicKey: string) => {
+    if (authRef.current.params && authRef.current.expiresAt > Date.now() + 30000) {
+      return authRef.current.params;
+    }
+    return createAuthParams(publicKey);
+  }, [createAuthParams]);
 
   const connect = async () => {
     if (!checkExtension()) return;
@@ -90,18 +120,14 @@ export default () => {
     if (!_wallet.address) return;
 
     const publicKey = await window.metaidwallet.btc.getPublicKey();
-    const publicKeySign =
-      await window.metaidwallet.btc.signMessage("metaid.market");
-    if (publicKeySign.status) return;
+    try {
+      await ensureAuthParams(publicKey);
+    } catch (err) {
+      console.log(err);
+      setInitializing(false);
+      return;
+    }
     setNetwork(curNetwork);
-    setAuthParams({ "X-Public-Key": publicKey, "X-Signature": publicKeySign });
-    writeStorage(
-      "authParams",
-      JSON.stringify({
-        "X-Public-Key": publicKey,
-        "X-Signature": publicKeySign,
-      })
-    );
     const _btcConnector: IBtcConnector = await btcConnect({
       wallet: _wallet,
       network,
@@ -114,9 +140,9 @@ export default () => {
     setInitializing(true);
     setBtcConnector(_btcConnector);
     setConnected(true);
-    setBTCAddress(_btcConnector.wallet.address);
+    setBTCAddress(_wallet.address);
     setAddressType(
-      determineAddressInfo(_btcConnector.wallet.address).toUpperCase()
+      determineAddressInfo(_wallet.address).toUpperCase()
     );
     // const bal = await _btcConnector.wallet.getBalance();
     const utxos = await window.metaidwallet.btc.getUtxos();
@@ -139,6 +165,11 @@ export default () => {
   };
 
   const disConnect = async () => {
+    const params = authRef.current.params;
+    if (params) {
+      void authLogout(network, params).catch(() => undefined);
+    }
+    authRef.current = { expiresAt: 0 };
     setConnected(false);
     setBTCAddress("");
     setUserBal("");
@@ -204,18 +235,10 @@ export default () => {
       setNetwork(_network);
       const walletParams = readStorage("walletParams");
       if (walletParams) {
-        let _authParams: AuthParams | undefined = undefined;
-        const authParamsRaw = readStorage("authParams");
-        if (authParamsRaw) {
-          _authParams = JSON.parse(authParamsRaw) as AuthParams;
-        }
-        if (!_authParams) {
-          disConnect();
-          setInitializing(false);
-          return;
-        }
-        const _walletParams = JSON.parse(walletParams);
-        if (_authParams && _authParams["X-Public-Key"] !== _walletParams.pub) {
+        let _walletParams: { address: string; pub: string };
+        try {
+          _walletParams = JSON.parse(walletParams);
+        } catch {
           disConnect();
           setInitializing(false);
           return;
@@ -226,25 +249,19 @@ export default () => {
         });
         const btcAddress = await window.metaidwallet.btc.getAddress();
         const pubKey = await window.metaidwallet.btc.getPublicKey();
-        if (btcAddress !== _walletParams.address) {
+        if (btcAddress !== _walletParams.address || pubKey !== _walletParams.pub) {
           disConnect();
           setInitializing(false);
           return;
         }
-        if (pubKey !== _walletParams.pub) {
+        try {
+          await ensureAuthParams(pubKey);
+        } catch (err) {
+          console.log(err);
           disConnect();
           setInitializing(false);
           return;
         }
-        setAuthParams((prev) => {
-          if (!prev) {
-            return _authParams;
-          }
-          if (prev["X-Public-Key"] === _authParams?.["X-Public-Key"]) {
-            return prev;
-          }
-          return _authParams;
-        });
         const _btcConnector: IBtcConnector = await btcConnect({
           wallet: _wallet,
           network: _network,
@@ -253,9 +270,9 @@ export default () => {
         setBtcConnector(_btcConnector);
         setConnected(true);
         setMetaid(_btcConnector.metaid);
-        setBTCAddress(_btcConnector.wallet.address);
+        setBTCAddress(_wallet.address);
         setAddressType(
-          determineAddressInfo(_btcConnector.wallet.address).toUpperCase()
+          determineAddressInfo(_wallet.address).toUpperCase()
         );
         try {
           // const bal = await _btcConnector.wallet.getBalance();

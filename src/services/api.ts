@@ -175,6 +175,42 @@ export async function authTest(
   });
 }
 
+export async function authChallenge(
+  network: API.Network,
+  publicKey: string
+) {
+  return request<API.Ret<{ message: string; nonce: string; expiresAt: number }>>(
+    `${getHost(network)}/api/v1/auth/challenge`,
+    {
+      method: "POST",
+      data: { publicKey },
+    }
+  );
+}
+
+export async function authLogin(
+  network: API.Network,
+  params: { publicKey: string; signature: string; nonce: string }
+) {
+  return request<API.Ret<{ token: string; publicKey: string; expiresAt: number }>>(
+    `${getHost(network)}/api/v1/auth/login`,
+    {
+      method: "POST",
+      data: params,
+    }
+  );
+}
+
+export async function authLogout(
+  network: API.Network,
+  authParams: { "X-Session": string }
+) {
+  return request<API.Ret<string>>(`${getHost(network)}/api/v1/auth/logout`, {
+    method: "POST",
+    headers: { ...authParams },
+  });
+}
+
 export async function getContent(
   url: string,
   options?: { [key: string]: any }
