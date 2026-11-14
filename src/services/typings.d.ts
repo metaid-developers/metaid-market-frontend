@@ -572,6 +572,37 @@ declare namespace API {
     opMetaId: string;
     mongoId: string;
   };
+  type Mrc721Item = {
+    collectionPinId: string;
+    collectionName: string;
+    itemPinId: string;
+    itemPinNumber: number;
+    number: number;
+    name: string;
+    desc: string;
+    cover: string;
+    metadata: string;
+    createTime: number;
+    address: string;
+    chainName: string;
+    genesisChainName: string;
+    confirmed?: boolean;
+    transferCount?: number;
+    contentType?: string;
+  };
+  type Mrc721CollectionHold = {
+    collectionName: string;
+    collectionname?: string;
+    name: string;
+    desc: string;
+    cover: string;
+    pinid: string;
+    ownnum: number;
+    totalSupply: number;
+    totalsupply?: number;
+    chainName: string;
+    totalnum?: number;
+  };
   type HotItem = {
     tickId: string;
     tick: string;

@@ -1,0 +1,559 @@
+.nftDetailModal {
+  .ant-modal-body {
+    max-height: calc(100vh - 140px);
+    overflow: auto;
+  }
+
+  .detail {
+    display: grid;
+    grid-template-columns: minmax(160px, 240px) 1fr;
+    gap: 18px;
+  }
+
+  .detailCover,
+  .detailFallback {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #10120e;
+  }
+
+  .detailFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    font-size: 56px;
+    font-weight: 700;
+    color: #d4f66b;
+  }
+
+  .detail h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #fff;
+  }
+
+  .detail .albumName {
+    margin-top: 4px;
+    color: #d4f66b;
+  }
+
+  .detail .desc {
+    margin-top: 12px;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 400;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .detailRows {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .detailRows div {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .detailRows span {
+    color: rgba(255, 255, 255, 0.45);
+    flex: 0 0 auto;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .nftDetailModal .detail {
+    grid-template-columns: 1fr;
+  }
+
+  .nftDetailModal .detailCover,
+  .nftDetailModal .detailFallback {
+    max-height: 220px;
+  }
+}
+
+.addressSearch {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 36px 53px 64px;
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .lead {
+    margin: 8px 0 0;
+    max-width: 640px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .searchPanel {
+    margin-top: 22px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    padding: 18px 18px 14px;
+    background-clip: padding-box, border-box;
+    background-origin: padding-box, border-box;
+    background-image:
+      linear-gradient(#0f110d, #0f110d),
+      linear-gradient(90deg, #c0f079, rgba(255, 255, 255, 0.85));
+  }
+
+  .searchForm {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .searchForm .ant-input-affix-wrapper,
+  .searchForm .ant-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .hint {
+    margin: 10px 0 0;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .formError {
+    margin: 6px 0 0;
+    color: #ff6b6b;
+    font-size: 13px;
+  }
+
+  .walletFill {
+    padding-left: 0;
+  }
+
+  .idle {
+    margin-top: 28px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+  }
+
+  .summary {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .summaryCard {
+    min-width: 160px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(25, 27, 24, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .summaryCard.address {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .summaryLabel {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .summaryValue {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+  }
+
+  .summaryValue.accent {
+    color: #d4f66b;
+  }
+
+  .sectionHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 32px 0 14px;
+  }
+
+  .sectionHead h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .sectionHead .sub {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .loadError {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(242, 58, 58, 0.12);
+    color: #ffb4b4;
+    margin-bottom: 12px;
+  }
+
+  .holdPlace {
+    min-height: 160px;
+  }
+
+  .emptyHold {
+    padding: 28px 12px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.45);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+  }
+
+  .tokenCell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 180px;
+  }
+
+  .tokenText {
+    min-width: 0;
+  }
+
+  .tickName {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tickName.id {
+    color: #f68819;
+  }
+
+  .tokenSub {
+    margin-top: 2px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .tag {
+    display: inline-flex;
+    border-radius: 4px;
+    background: rgba(246, 136, 25, 0.14);
+    color: #f68819;
+    font-size: 11px;
+    line-height: 1;
+    padding: 3px 6px;
+    font-weight: 600;
+  }
+
+  .priceCell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .up {
+    color: #40ba68;
+    font-size: 12px;
+  }
+
+  .down {
+    color: #b94041;
+    font-size: 12px;
+  }
+
+  .holdersLink {
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .holdersLink:hover {
+    color: #d4f66b;
+  }
+
+  .tokenTable .ant-table-row {
+    cursor: pointer;
+  }
+
+  .tokenCards {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tokenCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(25, 27, 24, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+  }
+
+  .tokenStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .tokenStats .k {
+    display: block;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .tokenStats .v {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pager {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .albums {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+  }
+
+  .albumChip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 240px;
+    height: 36px;
+    padding: 0 12px 0 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #141610;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .albumChip.on {
+    border-color: #d4f66b;
+    color: #d4f66b;
+  }
+
+  .albumChip img,
+  .albumFallback {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #232719;
+    flex: 0 0 auto;
+  }
+
+  .albumFallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #d4f66b;
+  }
+
+  .albumChip .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .albumChip .own {
+    color: rgba(255, 255, 255, 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nftGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+  }
+
+  .nftCard {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(25, 27, 24, 0.84);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .nftCard:hover,
+  .nftCard:focus-visible {
+    border-color: rgba(212, 246, 107, 0.7);
+    outline: none;
+  }
+
+  .nftCover,
+  .nftCoverFallback {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #10120e;
+    object-fit: cover;
+    display: block;
+  }
+
+  .nftCoverFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 700;
+    color: #d4f66b;
+  }
+
+  .nftBody {
+    padding: 12px 12px 14px;
+    min-width: 0;
+  }
+
+  .nftTitle {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .nftAlbum {
+    margin-top: 4px;
+    color: #d4f66b;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nftDesc {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.9em;
+  }
+
+  .nftMeta {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: #232719;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  .pill.pending {
+    color: #f5c16c;
+    background: rgba(245, 193, 108, 0.12);
+  }
+
+}
+
+@media screen and (max-width: 767px) {
+  .addressSearch {
+    padding: 20px 16px 48px;
+
+    h1 {
+      font-size: 22px;
+    }
+
+    .searchForm {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .searchForm .ant-btn {
+      width: 100%;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .summaryCard,
+    .summaryCard.address {
+      min-width: 0;
+    }
+
+    .summaryCard.address {
+      grid-column: 1 / -1;
+    }
+
+    .tokenTable {
+      display: none;
+    }
+
+    .tokenCards {
+      display: flex;
+    }
+
+    .nftGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .nftDesc {
+      display: none;
+    }
+  }
+}

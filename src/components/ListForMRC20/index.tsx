@@ -25,6 +25,45 @@ const tags: Record<string, string> = {
 
 }
 
+type ListChunk = { amount: string; txPoint: string };
+
+function sameQty(left: string | number, right: string | number) {
+    try {
+        return new Decimal(left).eq(right);
+    } catch {
+        return false;
+    }
+}
+
+// Whole on-chain chunks that add up to the listed quantity. Listing those
+// chunks only needs one wallet signature each. A quantity that cuts through
+// a chunk has to be split first (commit + reveal + list).
+function chunksCovering(chunks: ListChunk[], amount: number): ListChunk[] | null {
+    let target: Decimal;
+    try {
+        target = new Decimal(amount);
+    } catch {
+        return null;
+    }
+    if (!target.gt(0) || chunks.length > 12) return null;
+    const exact = chunks.find((item) => sameQty(item.amount, target.toString()));
+    if (exact) return [exact];
+    let found: ListChunk[] | null = null;
+    const walk = (index: number, sum: Decimal, picked: ListChunk[]): boolean => {
+        if (sum.eq(target)) {
+            found = picked.slice();
+            return true;
+        }
+        if (sum.gt(target) || index >= chunks.length) return false;
+        picked.push(chunks[index]);
+        if (walk(index + 1, sum.plus(chunks[index].amount), picked)) return true;
+        picked.pop();
+        return walk(index + 1, sum, picked);
+    };
+    walk(0, new Decimal(0), []);
+    return found;
+}
+
 const ListForMRC20 = ({ tag = 'MRC-20', tick = '' }: { tag?: string, tick?: string }) => {
     const { btcAddress, connect, connected, network, authParams, feeRate } =
         useModel("wallet");
@@ -143,24 +182,42 @@ const ListForMRC20 = ({ tag = 'MRC-20', tick = '' }: { tag?: string, tick?: stri
         if (!btcAddress) return
         const mrc20 = list.find((item) => item.mrc20Id === mrc20Id);
         if (!mrc20 || !mrc20.mrc20s) return;
-        const findMrc20 = mrc20.mrc20s.find((item) => Number(item.amount) === amount);
-        if (findMrc20) {
-            const utxo: API.UTXO = {
-                txId: findMrc20.txPoint.split(':')[0],
-                satoshi: 546,
-                satoshis: 546,
-                vout: Number(findMrc20.txPoint.split(':')[1]),
-                outputIndex: Number(findMrc20.txPoint.split(':')[1]),
-                confirmed: true
+        const chunks = mrc20.mrc20s.filter((item) => {
+            if (!item.txPoint) return false;
+            try {
+                return new Decimal(item.amount).gt(0);
+            } catch {
+                return false;
             }
-            const psbtRaw = await listMrc20Order(utxo, Number(new Decimal(price).times(1e8).toFixed(0)), network, btcAddress);
-            const { code, message } = await sellMRC20Order(network, { assetType: 'mrc20', tickId: mrc20Id, address: btcAddress, psbtRaw }, {
-                headers: {
-                    ...authParams,
-                },
-            })
-            if (code !== 0) {
-                throw new Error(message)
+        });
+        const cover = chunksCovering(chunks, amount);
+        if (cover) {
+            const totalSats = new Decimal(price).mul(1e8);
+            let used = new Decimal(0);
+            for (let i = 0; i < cover.length; i++) {
+                const chunk = cover[i];
+                const sats = i === cover.length - 1
+                    ? totalSats.minus(used)
+                    : totalSats.mul(chunk.amount).div(amount).toDecimalPlaces(0, Decimal.ROUND_DOWN);
+                used = used.plus(sats);
+                const [txId, vout] = chunk.txPoint.split(":");
+                const utxo: API.UTXO = {
+                    txId,
+                    satoshi: 546,
+                    satoshis: 546,
+                    vout: Number(vout),
+                    outputIndex: Number(vout),
+                    confirmed: true
+                }
+                const psbtRaw = await listMrc20Order(utxo, Number(sats.toFixed(0)), network, btcAddress);
+                const { code, message } = await sellMRC20Order(network, { assetType: 'mrc20', tickId: mrc20Id, address: btcAddress, psbtRaw }, {
+                    headers: {
+                        ...authParams,
+                    },
+                })
+                if (code !== 0) {
+                    throw new Error(message)
+                }
             }
             return
         };

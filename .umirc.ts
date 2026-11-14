@@ -20,6 +20,7 @@ export default defineConfig({
     { path: "/inscribe/:tab/:tick", component: "inscribe" },
     { path: "/holders/:tick", component: "holders" },
     { path: "/about/fees", component: "aboutFee" },
+    { path: "/search", component: "search" },
   ],
   title: "MetaID-Market",
   npmClient: "pnpm",

@@ -995,6 +995,54 @@ export async function redeemIdCoinPre(
   );
 }
 
+const MRC721_API = "https://so.metaid.io/api/mrc721";
+
+export type Mrc721Envelope<T> = {
+  code: number;
+  message: string;
+  data: T;
+};
+
+export async function getAddressMrc721Items(
+  params: {
+    address: string;
+    cursor: number;
+    size: number;
+    pinId?: string;
+  },
+  options?: { [key: string]: any }
+) {
+  return request<
+    Mrc721Envelope<
+      { list: API.Mrc721Item[]; total: number } | API.Mrc721Item[]
+    >
+  >(`${MRC721_API}/address/item`, {
+    method: "GET",
+    params,
+    ...(options || {}),
+  });
+}
+
+export async function getAddressMrc721Collections(
+  params: {
+    address: string;
+    cursor: number;
+    size: number;
+  },
+  options?: { [key: string]: any }
+) {
+  return request<
+    Mrc721Envelope<
+      | { list: API.Mrc721CollectionHold[]; total: number }
+      | API.Mrc721CollectionHold[]
+    >
+  >(`${MRC721_API}/address/collection`, {
+    method: "GET",
+    params,
+    ...(options || {}),
+  });
+}
+
 export async function redeemIdCoinCommit(
   network: API.Network,
   params: {
